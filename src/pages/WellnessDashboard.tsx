@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { WellnessCard } from "@/components/WellnessCard";
 import { WellnessTip } from "@/components/WellnessTip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Heart, 
   Moon, 
@@ -10,16 +12,61 @@ import {
   Smile, 
   TrendingUp,
   Calendar,
-  Target
+  Target,
+  Plus,
+  Minus
 } from "lucide-react";
 import wellnessHero from "@/assets/wellness-hero.jpg";
+import { useToast } from "@/hooks/use-toast";
 
 const WellnessDashboard = () => {
+  const { toast } = useToast();
+  
+  const [wellnessData, setWellnessData] = useState({
+    steps: 8547,
+    sleep: 7.5,
+    water: 6,
+    mood: "Great"
+  });
+
+  const [completedTips, setCompletedTips] = useState<number[]>([]);
+
   const wellnessTips = [
     { tip: "Take a 10-minute walk after each meal to improve digestion", category: "Movement" },
     { tip: "Practice deep breathing for 5 minutes when you feel stressed", category: "Mindfulness" },
     { tip: "Drink a glass of water as soon as you wake up", category: "Hydration" }
   ];
+
+  const updateMetric = (metric: keyof typeof wellnessData, change: number) => {
+    setWellnessData(prev => {
+      const newValue = typeof prev[metric] === 'number' 
+        ? Math.max(0, (prev[metric] as number) + change)
+        : prev[metric];
+      
+      toast({
+        title: "Metric Updated!",
+        description: `${metric} updated successfully`,
+      });
+      
+      return { ...prev, [metric]: newValue };
+    });
+  };
+
+  const toggleTipCompletion = (index: number) => {
+    setCompletedTips(prev => {
+      const isCompleted = prev.includes(index);
+      const newCompleted = isCompleted 
+        ? prev.filter(i => i !== index)
+        : [...prev, index];
+      
+      toast({
+        title: isCompleted ? "Tip unmarked" : "Great job!",
+        description: isCompleted ? "Tip unmarked as completed" : "Tip marked as completed",
+      });
+      
+      return newCompleted;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,36 +119,123 @@ const WellnessDashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <WellnessCard
-              title="Steps Taken"
-              value={8547}
-              goal={10000}
-              unit="steps"
-              progress={85}
-              icon={<Dumbbell className="h-4 w-4" />}
-              trend="up"
-            />
-            <WellnessCard
-              title="Sleep Quality"
-              value={7.5}
-              goal={8}
-              unit="hours"
-              progress={94}
-              icon={<Moon className="h-4 w-4" />}
-              trend="up"
-            />
-            <WellnessCard
-              title="Water Intake"
-              value={6}
-              goal={8}
-              unit="glasses"
-              progress={75}
-              icon={<Apple className="h-4 w-4" />}
-              trend="stable"
-            />
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="cursor-pointer">
+                  <WellnessCard
+                    title="Steps Taken"
+                    value={wellnessData.steps}
+                    goal={10000}
+                    unit="steps"
+                    progress={Math.round((wellnessData.steps / 10000) * 100)}
+                    icon={<Dumbbell className="h-4 w-4" />}
+                    trend="up"
+                  />
+                </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Update Steps</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center justify-center space-x-4 py-6">
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => updateMetric('steps', -100)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="text-2xl font-bold">{wellnessData.steps}</div>
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => updateMetric('steps', 100)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="cursor-pointer">
+                  <WellnessCard
+                    title="Sleep Quality"
+                    value={wellnessData.sleep}
+                    goal={8}
+                    unit="hours"
+                    progress={Math.round((wellnessData.sleep / 8) * 100)}
+                    icon={<Moon className="h-4 w-4" />}
+                    trend="up"
+                  />
+                </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Update Sleep</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center justify-center space-x-4 py-6">
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => updateMetric('sleep', -0.5)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="text-2xl font-bold">{wellnessData.sleep}h</div>
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => updateMetric('sleep', 0.5)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="cursor-pointer">
+                  <WellnessCard
+                    title="Water Intake"
+                    value={wellnessData.water}
+                    goal={8}
+                    unit="glasses"
+                    progress={Math.round((wellnessData.water / 8) * 100)}
+                    icon={<Apple className="h-4 w-4" />}
+                    trend="stable"
+                  />
+                </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Update Water Intake</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center justify-center space-x-4 py-6">
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => updateMetric('water', -1)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="text-2xl font-bold">{wellnessData.water}</div>
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => updateMetric('water', 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <WellnessCard
               title="Mood Score"
-              value="Great"
+              value={wellnessData.mood}
               icon={<Smile className="h-4 w-4" />}
               trend="up"
             />
@@ -139,6 +273,8 @@ const WellnessDashboard = () => {
                 key={index}
                 tip={tip.tip}
                 category={tip.category}
+                isCompleted={completedTips.includes(index)}
+                onToggleComplete={() => toggleTipCompletion(index)}
               />
             ))}
           </div>
